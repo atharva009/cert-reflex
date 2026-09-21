@@ -1,5 +1,12 @@
 # Hot-swap spike only. Delete with the spike package.
 spring:
+  # The spike needs no database. Scoped to this profile on purpose; as an
+  # annotation exclude on HotSwapSpikeApplication it leaked into the main
+  # application context and disabled Flyway there.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
   ssl:
     bundle:
       pem:

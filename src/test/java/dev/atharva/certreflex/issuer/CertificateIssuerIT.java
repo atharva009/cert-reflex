@@ -61,8 +61,12 @@ class CertificateIssuerIT {
     static final LocalStackContainer LOCALSTACK =
             new LocalStackContainer("localstack/localstack:4.14").withServices("kms");
 
-    /** The CA certificate cache must never land on the developer's ./runtime/ca.pem. */
-    private static final Path CA_CACHE_DIR = createTempDirectory();
+    /**
+     * Everything this test writes goes here. The CA cache must never land on
+     * the developer's ./runtime/ca.pem, and Stage B runs during @SpringBootTest
+     * too, so the managed services' cert paths have to be redirected as well.
+     */
+    private static final Path WORK_DIR = createTempDirectory();
 
     private static String caKeyId;
 
@@ -71,7 +75,20 @@ class CertificateIssuerIT {
         registry.add("aws.kms.endpoint", () -> LOCALSTACK.getEndpoint().toString());
         registry.add("aws.kms.region", LOCALSTACK::getRegion);
         registry.add("aws.kms.ca-key-id", CertificateIssuerIT::caKeyId);
-        registry.add("pki.ca-path", () -> CA_CACHE_DIR.resolve("ca.pem").toString());
+        registry.add("pki.ca-path", () -> WORK_DIR.resolve("ca.pem").toString());
+        // Replaces the service list from application.yml outright, so the
+        // bootstrap runner writes into the temp directory instead of ./runtime.
+        service(registry, 0, "demo-a");
+        service(registry, 1, "demo-b");
+    }
+
+    private static void service(DynamicPropertyRegistry registry, int index, String name) {
+        registry.add("pki.services[" + index + "].name", () -> name);
+        registry.add("pki.services[" + index + "].common-name", () -> name);
+        registry.add("pki.services[" + index + "].cert-path",
+                () -> WORK_DIR.resolve(name).resolve("cert.pem").toString());
+        registry.add("pki.services[" + index + "].key-path",
+                () -> WORK_DIR.resolve(name).resolve("key.pem").toString());
     }
 
     /**
@@ -223,13 +240,13 @@ class CertificateIssuerIT {
         try {
             return Files.createTempDirectory("cert-reflex-ca");
         } catch (IOException e) {
-            throw new IllegalStateException("Could not create a temp directory for the CA cache", e);
+            throw new IllegalStateException("Could not create a temp directory for the test", e);
         }
     }
 
     @AfterAll
-    static void deleteCaCache() throws IOException {
-        try (var paths = Files.walk(CA_CACHE_DIR)) {
+    static void deleteWorkDir() throws IOException {
+        try (var paths = Files.walk(WORK_DIR)) {
             paths.sorted(Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
         }
     }

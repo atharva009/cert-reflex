@@ -8,9 +8,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Global registration is order-dependent, and beans that build certificates
  * during context startup can easily run before whatever would have registered it.
  */
-final class BouncyCastle {
+public final class BouncyCastle {
 
-    static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
+    public static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
 
     private BouncyCastle() {
     }

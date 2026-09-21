@@ -15,12 +15,12 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 
 /** PEM encoding helpers. Private keys are emitted as PKCS#8. */
-final class Pem {
+public final class Pem {
 
     private Pem() {
     }
 
-    static String encode(X509Certificate certificate) {
+    public static String encode(X509Certificate certificate) {
         try {
             return encode("CERTIFICATE", certificate.getEncoded());
         } catch (CertificateEncodingException e) {
@@ -28,13 +28,13 @@ final class Pem {
         }
     }
 
-    static String encode(List<X509Certificate> chain) {
+    public static String encode(List<X509Certificate> chain) {
         StringBuilder pem = new StringBuilder();
         chain.forEach(certificate -> pem.append(encode(certificate)));
         return pem.toString();
     }
 
-    static String encode(PrivateKey privateKey) {
+    public static String encode(PrivateKey privateKey) {
         return encode("PRIVATE KEY", privateKey.getEncoded());
     }
 
@@ -49,7 +49,7 @@ final class Pem {
     }
 
     /** Staged through a temp file so a watcher never observes a partial write. */
-    static void writeAtomically(Path target, String contents) throws IOException {
+    public static void writeAtomically(Path target, String contents) throws IOException {
         Files.createDirectories(target.toAbsolutePath().getParent());
         Path staging = target.resolveSibling(target.getFileName() + ".tmp");
         try (Writer writer = Files.newBufferedWriter(staging)) {

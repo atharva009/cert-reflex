@@ -6,8 +6,6 @@ import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
-import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 
 /**
  * Spike: does a certificate written to disk under a running, self-registered
@@ -15,9 +13,13 @@ import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
  * connections that are already open?
  *
  * <p>Run with the {@code spike} profile, which defines the {@code demo-a} SSL
- * bundle. No database: the datasource and Flyway are excluded deliberately.
+ * bundle and excludes the datasource and Flyway. Those exclusions live in
+ * application-spike.yml rather than on this annotation: this class sits in a
+ * package the main application component-scans, and an annotation-level
+ * exclude on a scanned @SpringBootApplication applies to that context too,
+ * which silently strips the datasource out of the real application.
  */
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, FlywayAutoConfiguration.class})
+@SpringBootApplication
 public class HotSwapSpikeApplication {
 
     static final String SERVICE_NAME = "demo-a";
