@@ -16,6 +16,7 @@ public record PkiProperties(
         Duration certValidity,
         Duration rotateThreshold,
         Duration watcherInterval,
+        String caPath,
         List<Service> services) {
 
     public Service service(String name) {

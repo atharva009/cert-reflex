@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import dev.atharva.certreflex.config.KmsProperties;
+import dev.atharva.certreflex.config.PkiProperties;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.GetPublicKeyRequest;
 
@@ -51,15 +52,16 @@ public class CertificateAuthority {
 
     private static final String SUBJECT_DN = "CN=cert-reflex intermediate CA";
     private static final Duration VALIDITY = Duration.ofDays(365);
-    static final Path CA_PATH = Path.of("runtime", "ca.pem");
 
     private final KmsClient kms;
     private final String caKeyId;
+    private final Path caPath;
     private final X509Certificate certificate;
 
-    public CertificateAuthority(KmsClient kms, KmsProperties kmsProperties) {
+    public CertificateAuthority(KmsClient kms, KmsProperties kmsProperties, PkiProperties pkiProperties) {
         this.kms = kms;
         this.caKeyId = kmsProperties.requireCaKeyId();
+        this.caPath = Path.of(pkiProperties.caPath());
         this.certificate = loadOrMint();
     }
 
@@ -73,24 +75,24 @@ public class CertificateAuthority {
         X509Certificate cached = readCached();
         if (cached != null && Arrays.equals(cached.getPublicKey().getEncoded(), kmsPublicKey.getEncoded())) {
             log.info("CA certificate loaded from {} serial={} keyId={}",
-                    CA_PATH, cached.getSerialNumber().toString(16).toUpperCase(), caKeyId);
+                    caPath, cached.getSerialNumber().toString(16).toUpperCase(), caKeyId);
             return cached;
         }
         if (cached != null) {
-            log.warn("Cached CA certificate at {} was signed by a different KMS key, re-minting", CA_PATH);
+            log.warn("Cached CA certificate at {} was signed by a different KMS key, re-minting", caPath);
         }
         return mint(kmsPublicKey);
     }
 
     /** Never throws: an unreadable or unparseable cache is simply replaced. */
     private X509Certificate readCached() {
-        if (!Files.isReadable(CA_PATH)) {
+        if (!Files.isReadable(caPath)) {
             return null;
         }
-        try (InputStream in = Files.newInputStream(CA_PATH)) {
+        try (InputStream in = Files.newInputStream(caPath)) {
             return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
         } catch (Exception e) {
-            log.warn("Could not read cached CA certificate at {} ({}), re-minting", CA_PATH, e.getMessage());
+            log.warn("Could not read cached CA certificate at {} ({}), re-minting", caPath, e.getMessage());
             return null;
         }
     }
@@ -118,9 +120,9 @@ public class CertificateAuthority {
                     .setProvider(BouncyCastle.PROVIDER)
                     .getCertificate(builder.build(new KmsContentSigner(kms, caKeyId)));
 
-            Pem.writeAtomically(CA_PATH, Pem.encode(minted));
+            Pem.writeAtomically(caPath, Pem.encode(minted));
             log.info("CA certificate minted serial={} keyId={} cached at {}",
-                    minted.getSerialNumber().toString(16).toUpperCase(), caKeyId, CA_PATH);
+                    minted.getSerialNumber().toString(16).toUpperCase(), caKeyId, caPath);
             return minted;
         } catch (IOException | java.security.GeneralSecurityException e) {
             throw new IllegalStateException("Could not mint the CA certificate", e);

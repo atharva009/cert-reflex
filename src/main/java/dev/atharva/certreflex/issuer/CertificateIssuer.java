@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -49,7 +50,10 @@ public class CertificateIssuer {
     public IssuedCertificate issue(String serviceName) {
         PkiProperties.Service service = pkiProperties.service(serviceName);
 
-        Instant now = Instant.now();
+        // Truncated to seconds because X.509 validity fields have no sub-second
+        // precision. Without this the record, and so the inventory row written
+        // from it, would claim a precision the certificate does not carry.
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         Instant notBefore = now.minus(BACKDATE);
         Instant notAfter = now.plus(pkiProperties.certValidity());
 
