@@ -1,0 +1,10 @@
+# Hot-swap spike only. Delete with the spike package.
+spring:
+  ssl:
+    bundle:
+      pem:
+        demo-a:
+          reload-on-update: true
+          keystore:
+            certificate: file:./runtime/demo-a/cert.pem
+            private-key: file:./runtime/demo-a/key.pem
