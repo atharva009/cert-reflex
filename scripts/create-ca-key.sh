@@ -7,16 +7,22 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$REPO_ROOT/.env"
 
+cd "$REPO_ROOT"
+
 if [[ -f "$ENV_FILE" ]]; then
   existing="$(grep -E '^CA_KEY_ID=' "$ENV_FILE" | tail -1 | cut -d= -f2- | tr -d '\r' || true)"
   if [[ -n "${existing:-}" ]]; then
-    echo "CA key already exists, reusing it."
-    echo "CA_KEY_ID=$existing"
-    exit 0
+    # LocalStack does not persist keys across `docker compose down`, so a
+    # recorded id is only good if KMS still knows about it.
+    if docker compose exec -T localstack awslocal kms describe-key \
+        --key-id "$existing" > /dev/null 2>&1; then
+      echo "CA key already exists, reusing it."
+      echo "CA_KEY_ID=$existing"
+      exit 0
+    fi
+    echo "CA_KEY_ID=$existing in .env is no longer in KMS; creating a new key."
   fi
 fi
-
-cd "$REPO_ROOT"
 
 echo "Creating CA signing key in LocalStack KMS..."
 response="$(docker compose exec -T localstack awslocal kms create-key \
