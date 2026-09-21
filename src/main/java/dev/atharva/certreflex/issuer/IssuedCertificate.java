@@ -22,6 +22,6 @@ public record IssuedCertificate(
         String privateKeyPem) {
 
     public String serialHex() {
-        return serialNumber.toString(16).toUpperCase();
+        return Serials.hex(serialNumber);
     }
 }

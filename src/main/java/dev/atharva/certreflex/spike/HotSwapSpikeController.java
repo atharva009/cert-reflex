@@ -131,6 +131,6 @@ class HotSwapSpikeController {
     }
 
     private static String hex(java.math.BigInteger serial) {
-        return serial.toString(16).toUpperCase();
+        return dev.atharva.certreflex.issuer.Serials.hex(serial);
     }
 }

@@ -29,6 +29,8 @@ pki:
   cert-validity: PT2M
   rotate-threshold: PT30S
   watcher-interval: PT5S
+  # Every cert, key and CA file must resolve inside this root; startup fails otherwise.
+  runtime-root: ./runtime
   ca-path: ./runtime/ca.pem
   # The single definition of the managed fleet: bootstrap, the demo listeners,
   # the watcher and the remediator all read this list.

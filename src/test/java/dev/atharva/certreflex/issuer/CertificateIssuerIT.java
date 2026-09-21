@@ -75,6 +75,7 @@ class CertificateIssuerIT {
         registry.add("aws.kms.endpoint", () -> LOCALSTACK.getEndpoint().toString());
         registry.add("aws.kms.region", LOCALSTACK::getRegion);
         registry.add("aws.kms.ca-key-id", CertificateIssuerIT::caKeyId);
+        registry.add("pki.runtime-root", WORK_DIR::toString);
         registry.add("pki.ca-path", () -> WORK_DIR.resolve("ca.pem").toString());
         // Replaces the service list from application.yml outright, so the
         // bootstrap runner writes into the temp directory instead of ./runtime.

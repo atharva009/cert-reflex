@@ -1,5 +1,7 @@
 package dev.atharva.certreflex.inventory;
 
+import dev.atharva.certreflex.issuer.Serials;
+
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.UUID;
@@ -25,6 +27,6 @@ public record CertRecord(
         Instant updatedAt) {
 
     public String serialHex() {
-        return serialNumber.toString(16).toUpperCase();
+        return Serials.hex(serialNumber);
     }
 }

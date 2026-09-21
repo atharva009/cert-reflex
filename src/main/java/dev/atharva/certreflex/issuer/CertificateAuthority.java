@@ -75,7 +75,7 @@ public class CertificateAuthority {
         X509Certificate cached = readCached();
         if (cached != null && Arrays.equals(cached.getPublicKey().getEncoded(), kmsPublicKey.getEncoded())) {
             log.info("CA certificate loaded from {} serial={} keyId={}",
-                    caPath, cached.getSerialNumber().toString(16).toUpperCase(), caKeyId);
+                    caPath, Serials.hex(cached.getSerialNumber()), caKeyId);
             return cached;
         }
         if (cached != null) {
@@ -122,7 +122,7 @@ public class CertificateAuthority {
 
             Pem.writeAtomically(caPath, Pem.encode(minted));
             log.info("CA certificate minted serial={} keyId={} cached at {}",
-                    minted.getSerialNumber().toString(16).toUpperCase(), caKeyId, caPath);
+                    Serials.hex(minted.getSerialNumber()), caKeyId, caPath);
             return minted;
         } catch (IOException | java.security.GeneralSecurityException e) {
             throw new IllegalStateException("Could not mint the CA certificate", e);

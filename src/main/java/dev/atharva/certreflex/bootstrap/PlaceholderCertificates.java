@@ -1,5 +1,6 @@
 package dev.atharva.certreflex.bootstrap;
 
+import dev.atharva.certreflex.issuer.Serials;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import dev.atharva.certreflex.config.PkiProperties;
 import dev.atharva.certreflex.issuer.BouncyCastle;
 import dev.atharva.certreflex.issuer.Pem;
 
@@ -68,7 +70,7 @@ public final class PlaceholderCertificates {
                 }
                 BigInteger serial = write(service);
                 log.info("Stage A service_name={} wrote self-signed placeholder serial={} to {}",
-                        service.name(), serial.toString(16).toUpperCase(), service.certPath());
+                        service.name(), Serials.hex(serial), service.certPath());
             } catch (Exception e) {
                 // A connector that cannot bind is fatal, so do not swallow this.
                 throw new IllegalStateException(
@@ -144,9 +146,19 @@ public final class PlaceholderCertificates {
             Map<String, Object> root = new Yaml().load(in);
             Map<String, Object> pki = (Map<String, Object>) root.get("pki");
             List<Map<String, String>> services = (List<Map<String, String>>) pki.get("services");
+            String runtimeRoot = (String) pki.getOrDefault("runtime-root", PkiProperties.DEFAULT_RUNTIME_ROOT);
+            Path runtimeRootPath = PkiProperties.absolute(runtimeRoot);
             return services.stream()
-                    .map(service -> new ServicePaths(
-                            service.get("name"), service.get("cert-path"), service.get("key-path")))
+                    .map(service -> {
+                        String name = service.get("name");
+                        // Same containment rule the bound properties enforce; this
+                        // runs before Spring exists, so it cannot rely on that check.
+                        PkiProperties.requireInside(runtimeRootPath, service.get("cert-path"),
+                                "pki.services[" + name + "].cert-path");
+                        PkiProperties.requireInside(runtimeRootPath, service.get("key-path"),
+                                "pki.services[" + name + "].key-path");
+                        return new ServicePaths(name, service.get("cert-path"), service.get("key-path"));
+                    })
                     .toList();
         } catch (IOException e) {
             throw new IllegalStateException("Could not read " + CONFIG_RESOURCE, e);

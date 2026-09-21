@@ -1,5 +1,6 @@
 package dev.atharva.certreflex.inventory;
 
+import dev.atharva.certreflex.issuer.Serials;
 import java.math.BigInteger;
 import java.time.Instant;
 
@@ -44,8 +45,8 @@ public class CertLifecycle {
             Instant notBefore, Instant notAfter, String certPem, String certPath, String keyPath) {
         certRepository.insert(serviceName, commonName, serialNumber, notBefore, notAfter,
                 CertStatus.ACTIVE, certPem, certPath, keyPath);
-        events.swapped(serviceName, "Issued and installed certificate " + hex(serialNumber));
-        log.info("ACTIVE service_name={} serial={}", serviceName, hex(serialNumber));
+        events.swapped(serviceName, "Issued and installed certificate " + Serials.hex(serialNumber));
+        log.info("ACTIVE service_name={} serial={}", serviceName, Serials.hex(serialNumber));
     }
 
     /** Event only: there is no row to transition yet, or none that changes state. */
@@ -81,8 +82,8 @@ public class CertLifecycle {
     public void completeRotation(String serviceName, BigInteger serialNumber,
             Instant notBefore, Instant notAfter, String certPem) {
         certRepository.updateAfterRotation(serviceName, serialNumber, notBefore, notAfter, certPem);
-        events.swapped(serviceName, "Swapped in certificate " + hex(serialNumber));
-        log.info("ACTIVE service_name={} serial={}", serviceName, hex(serialNumber));
+        events.swapped(serviceName, "Swapped in certificate " + Serials.hex(serialNumber));
+        log.info("ACTIVE service_name={} serial={}", serviceName, Serials.hex(serialNumber));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -92,7 +93,5 @@ public class CertLifecycle {
         log.warn("FAILED service_name={} {}", serviceName, message);
     }
 
-    private static String hex(BigInteger serialNumber) {
-        return serialNumber.toString(16).toUpperCase();
-    }
+
 }
