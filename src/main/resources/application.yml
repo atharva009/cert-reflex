@@ -29,3 +29,18 @@ pki:
   cert-validity: PT2M
   rotate-threshold: PT30S
   watcher-interval: PT5S
+  # The single definition of the managed fleet: bootstrap, the demo listeners,
+  # the watcher and the remediator all read this list.
+  services:
+    - name: demo-a
+      common-name: demo-a
+      cert-path: ./runtime/demo-a/cert.pem
+      key-path: ./runtime/demo-a/key.pem
+    - name: demo-b
+      common-name: demo-b
+      cert-path: ./runtime/demo-b/cert.pem
+      key-path: ./runtime/demo-b/key.pem
+    - name: demo-c
+      common-name: demo-c
+      cert-path: ./runtime/demo-c/cert.pem
+      key-path: ./runtime/demo-c/key.pem
