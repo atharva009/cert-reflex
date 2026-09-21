@@ -1,0 +1,12 @@
+package dev.atharva.certreflex;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CertReflexApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(CertReflexApplication.class, args);
+    }
+}

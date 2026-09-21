@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: cert-reflex
+  # scripts/create-ca-key.sh writes CA_KEY_ID into a gitignored .env at the repo
+  # root; loading it as a property source means no manual export is needed.
+  # A real exported CA_KEY_ID environment variable still wins over this file.
+  config:
+    import: optional:file:./.env[.properties]
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pki
+    username: pki
+    password: pki
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  # Phase 6 adds the spring.ssl.bundle.pem section here: one reload-on-update
+  # bundle per demo listener, pointed at runtime/<service>/{cert,key}.pem.
+
+server:
+  port: 8080
+
+aws:
+  kms:
+    endpoint: http://localhost:4566
+    region: us-east-1
+    ca-key-id: ${CA_KEY_ID:}
+
+pki:
+  cert-validity: PT2M
+  rotate-threshold: PT30S
+  watcher-interval: PT5S

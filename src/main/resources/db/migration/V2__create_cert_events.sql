@@ -1,0 +1,7 @@
+CREATE TABLE cert_events (
+    id BIGSERIAL PRIMARY KEY,
+    service_name TEXT NOT NULL,
+    event_type TEXT NOT NULL,   -- DETECTED_EXPIRING, DETECTED_CORRUPTED, ISSUING, SWAPPED, FAILED
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
