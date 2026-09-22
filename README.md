@@ -1,8 +1,8 @@
 # Cert-Reflex
 
 Cert-Reflex issues short-lived TLS certificates from its own CA, watches them,
-and replaces them before they expire — or the moment someone corrupts one on
-disk — without dropping a single connection on the HTTPS listeners they protect.
+and replaces them before they expire (or the moment someone corrupts one on
+disk) without dropping a single connection on the HTTPS listeners they protect.
 Detect, remediate, verify, no human in the loop.
 
 Three HTTPS listeners run inside one Spring Boot process, each with its own
@@ -17,20 +17,25 @@ watched for two minutes and then read.
 
 ## Recording
 
-> **[ RECORDING PLACEHOLDER — 15–30s screen capture of the dashboard ]**
->
-> Shows: three panels counting down; `corrupt` clicked on one; the event log
-> filling in injected, detected, issuing, swapped; the panel returning to green
-> with a new serial and a full countdown.
+<!-- Replace the line below by dragging docs/cert-reflex-demo.mp4 into the
+     GitHub web editor. GitHub only renders video from its own asset host, so
+     a repo path will not produce a player. A bare URL on its own line will. -->
 
-The zero-downtime claim is not in the recording — a terminal alongside the
-dashboard is illegible at this size. It is walkthrough step 3 below, where it is
-three commands and a serial that changes mid-connection.
+HOSTED_VIDEO_URL
+
+30 seconds, no narration: three listeners on two-minute certificates, a
+certificate corrupted on disk, the expiry path on another listener, and each
+one detected and reissued while the others stay green. The file is also at
+[docs/cert-reflex-demo.mp4](docs/cert-reflex-demo.mp4).
+
+The zero-downtime proof is deliberately not in the recording: a terminal beside
+the dashboard is illegible at this size. Walkthrough step 3 below covers it in
+one command.
 
 ## Running it
 
-Requires Docker and a JDK 21+. Node.js is **not** required — the dashboard's
-build output is committed.
+Requires Docker and a JDK 21+. Node.js is **not** required, because the
+dashboard's build output is committed.
 
 ```bash
 docker compose up -d --wait
@@ -90,7 +95,7 @@ automatically and can be deleted freely; only `.env` is worth keeping, and
 `./scripts/create-ca-key.sh` rewrites that anyway.
 
 If you already stopped without `-v`, re-run `./scripts/create-ca-key.sh` and
-start again — it detects the stale key id and replaces it. If the application
+start again; it detects the stale key id and replaces it. If the application
 was left running while LocalStack went away, see the LocalStack entry under
 [Troubleshooting](#troubleshooting) instead: the rows will have gone to `FAILED`
 and need a manual rotate each.
@@ -115,7 +120,7 @@ green with a new serial.
 
 **3. Prove there was no downtime.** This one needs two terminals, in order.
 
-First, start a keep-alive session — twenty requests, one per second, all on one
+First, start a keep-alive session: twenty requests, one per second, all on one
 connection. `[1-20]` is curl's own URL range, so the shell never sees it:
 
 ```bash
@@ -131,7 +136,7 @@ curl -X POST http://localhost:8080/internal/certs/demo-a/rotate
 ```
 
 The verbose output shows one TCP connect, one TLS handshake, `Re-using existing
-connection` for every subsequent request, and every response a 200 — while the
+connection` for every subsequent request, and every response a 200, while the
 serial in the response body changes partway through. The connection that was
 already open never noticed.
 
@@ -181,12 +186,12 @@ Deliberately out of scope:
 - Revocation (CRL/OCSP)
 - Multi-CA hierarchy or cross-signing
 - SSH certificates, RADIUS, FIDO2, or any other identity product surface
-- A real HSM — LocalStack KMS stands in
+- A real HSM (LocalStack KMS stands in)
 - Metrics and observability dashboards
 - Authentication on the admin API, including the break-it controls; this runs
   locally and is captured as a recording rather than hosted
 - Automatic retry of a failed rotation; manual rotation is the recovery path
-- Multi-instance operation — ShedLock is present and the lock is real, but
+- Multi-instance operation: ShedLock is present and the lock is real, but
   startup recovery assumes a single instance
 
 ## Architecture
@@ -234,7 +239,7 @@ ROTATING ──(issue/install error)──▶ FAILED   (logged, not retried)
 ```
 
 A process that dies mid-rotation leaves a row in `ROTATING`, which no scan
-matches — the expiry scan looks at `ACTIVE` rows and the remediation scan at
+matches: the expiry scan looks at `ACTIVE` rows and the remediation scan at
 `EXPIRING` and `CORRUPTED` ones. On startup those rows are reset to `CORRUPTED`,
 which is honest (the row and the disk genuinely disagree) and hands them to the
 loop that already works.
@@ -264,7 +269,7 @@ right certificate. The watcher's public-key check catches it a pass later.
 
 **A corrupted certificate is not an outage.** The listener keeps serving its last
 good certificate from memory, so corruption shows up in the dashboard, the event
-log and the application log — never on the wire.
+log and the application log, but never on the wire.
 
 **A red `Failed` panel is terminal.** Failed rotations are not retried, by
 design. The panel says so, and manual rotation is the recovery path:
@@ -298,11 +303,11 @@ line is the wrong signal.
 certificate.
 
 **Self-registered connectors do not inherit SSL bundle reloads.** The spec
-asserts `reload-on-update` is sufficient. It is — for the connector Spring Boot
-builds from `server.*` properties. Connectors registered by the application get
-the bundle but no update handler, so each listener registers its own. Without
-that, a listener serves a stale certificate forever while the inventory reports
-`ACTIVE`.
+asserts `reload-on-update` is sufficient. It is, but only for the connector
+Spring Boot builds from `server.*` properties. Connectors registered by the
+application get the bundle but no update handler, so each listener registers
+its own. Without that, a listener serves a stale certificate forever while the
+inventory reports `ACTIVE`.
 
 **An `INJECTED` event type beyond the spec's list.** An injection is an operator
 action, not an observation. Reusing a detection type would put a detection line
@@ -321,20 +326,20 @@ it.
 All measured on one laptop, not estimated:
 
 - **6.9s** from `docker compose up` to three listeners serving CA-signed
-  certificates, from a dropped volume and an empty `runtime/` — with the
+  certificates, from a dropped volume and an empty `runtime/`, with the
   container images already pulled; a first run adds that download
 - **21 rotations in ten minutes** unattended, nothing at WARN or ERROR
 - **6,699 requests** across the three listeners during live rotations: zero
   failures, zero dropped connections
 - **~60ms** for the explicit connector reload, **~100ms** for a full rotation
-- **~10s** from corrupting a file to a fresh certificate on the wire — almost
+- **~10s** from corrupting a file to a fresh certificate on the wire, almost
   all of it the two watcher passes
 
 ## Troubleshooting
 
 **`FATAL: role "pki" does not exist`**
 
-Something already owns port 5432 and is shadowing the container — the app is
+Something already owns port 5432 and is shadowing the container, so the app is
 talking to a different Postgres. The error names the role, not the cause. Point
 the container at another port:
 
@@ -363,8 +368,8 @@ done
 
 Bootstrap writes self-signed placeholders before the application context
 finishes coming up, so Tomcat has something to bind to. If startup then fails,
-those files remain. Harmless — the next successful boot replaces them with
-CA-signed certificates within seconds.
+those files remain. This is harmless; the next successful boot replaces them
+with CA-signed certificates within seconds.
 
 ## Layout
 
@@ -395,8 +400,8 @@ runtime/                            certificates and keys, gitignored
 ```
 
 One integration test covers the issuer against real Postgres and LocalStack
-containers via Testcontainers — no mocking of KMS, since testing against the
-real API shape is the reason LocalStack is here. One unit test covers the
+containers via Testcontainers, with no mocking of KMS, since testing against
+the real API shape is the reason LocalStack is here. One unit test covers the
 corruption check, which is the only piece of logic subtle enough that a silent
 mistake in it would look like a healthy system. The watcher and remediator are
 exercised by running the demo.
