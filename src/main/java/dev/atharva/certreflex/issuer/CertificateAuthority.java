@@ -31,6 +31,7 @@ import dev.atharva.certreflex.config.KmsProperties;
 import dev.atharva.certreflex.config.PkiProperties;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.GetPublicKeyRequest;
+import software.amazon.awssdk.services.kms.model.NotFoundException;
 
 /**
  * The intermediate CA certificate that leaf certificates chain to.
@@ -130,8 +131,22 @@ public class CertificateAuthority {
     }
 
     private PublicKey fetchPublicKey() {
-        byte[] spki = kms.getPublicKey(GetPublicKeyRequest.builder().keyId(caKeyId).build())
-                .publicKey().asByteArray();
+        byte[] spki;
+        try {
+            spki = kms.getPublicKey(GetPublicKeyRequest.builder().keyId(caKeyId).build())
+                    .publicKey().asByteArray();
+        } catch (NotFoundException e) {
+            // The common case, and it has a one-command fix: LocalStack does not
+            // persist KMS keys, so tearing the container down destroys the key
+            // while .env goes on naming it. Only a missing key is translated
+            // here; every other KMS failure keeps its own error.
+            throw new IllegalStateException("""
+                    The configured CA key id %s no longer exists in KMS.
+                    LocalStack does not persist KMS keys across a container teardown, so
+                    `docker compose down` destroys the key while .env still points at it.
+                    Run ./scripts/create-ca-key.sh to fix this: it detects the stale id
+                    and issues a replacement.""".formatted(caKeyId), e);
+        }
         try {
             // KMS returns a DER SubjectPublicKeyInfo, which is what X509EncodedKeySpec takes.
             return KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(spki));
