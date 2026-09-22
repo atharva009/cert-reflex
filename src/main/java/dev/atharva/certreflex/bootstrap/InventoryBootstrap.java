@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import dev.atharva.certreflex.config.PkiProperties;
@@ -24,6 +26,7 @@ import dev.atharva.certreflex.issuer.IssuedCertificate;
  * <p>Idempotent, and not a rotation path: a service that already has a row is
  * left entirely alone.
  */
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @Component
 public class InventoryBootstrap implements ApplicationRunner {
 
