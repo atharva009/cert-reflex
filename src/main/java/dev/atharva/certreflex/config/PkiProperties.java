@@ -79,6 +79,6 @@ public record PkiProperties(
         return resolved;
     }
 
-    public record Service(String name, String commonName, String certPath, String keyPath) {
+    public record Service(String name, String commonName, int port, String certPath, String keyPath) {
     }
 }

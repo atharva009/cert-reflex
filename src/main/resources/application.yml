@@ -13,8 +13,31 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-  # Phase 6 adds the spring.ssl.bundle.pem section here: one reload-on-update
-  # bundle per demo listener, pointed at runtime/<service>/{cert,key}.pem.
+  ssl:
+    bundle:
+      watch:
+        file:
+          # 10s by default, which is a third of the rotate threshold. See
+          # locked decision 12.
+          quiet-period: 1s
+      pem:
+        # These paths must match the matching pki.services entry; startup
+        # fails if they drift. See the report for why they are not unified.
+        demo-a:
+          reload-on-update: true
+          keystore:
+            certificate: file:./runtime/demo-a/cert.pem
+            private-key: file:./runtime/demo-a/key.pem
+        demo-b:
+          reload-on-update: true
+          keystore:
+            certificate: file:./runtime/demo-b/cert.pem
+            private-key: file:./runtime/demo-b/key.pem
+        demo-c:
+          reload-on-update: true
+          keystore:
+            certificate: file:./runtime/demo-c/cert.pem
+            private-key: file:./runtime/demo-c/key.pem
 
 server:
   port: 8080
@@ -37,13 +60,16 @@ pki:
   services:
     - name: demo-a
       common-name: demo-a
+      port: 8443
       cert-path: ./runtime/demo-a/cert.pem
       key-path: ./runtime/demo-a/key.pem
     - name: demo-b
       common-name: demo-b
+      port: 8444
       cert-path: ./runtime/demo-b/cert.pem
       key-path: ./runtime/demo-b/key.pem
     - name: demo-c
       common-name: demo-c
+      port: 8445
       cert-path: ./runtime/demo-c/cert.pem
       key-path: ./runtime/demo-c/key.pem

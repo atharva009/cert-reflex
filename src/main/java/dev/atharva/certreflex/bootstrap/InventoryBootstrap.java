@@ -1,7 +1,5 @@
 package dev.atharva.certreflex.bootstrap;
 
-import java.nio.file.Path;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -9,11 +7,11 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import dev.atharva.certreflex.config.PkiProperties;
+import dev.atharva.certreflex.demo.CertificateInstaller;
 import dev.atharva.certreflex.inventory.CertLifecycle;
 import dev.atharva.certreflex.inventory.CertRepository;
 import dev.atharva.certreflex.issuer.CertificateIssuer;
 import dev.atharva.certreflex.issuer.IssuedCertificate;
-import dev.atharva.certreflex.issuer.Pem;
 
 /**
  * Stage B of the two-stage bootstrap, per locked decision 6.
@@ -35,13 +33,15 @@ public class InventoryBootstrap implements ApplicationRunner {
     private final CertRepository certRepository;
     private final CertificateIssuer issuer;
     private final CertLifecycle lifecycle;
+    private final CertificateInstaller installer;
 
     public InventoryBootstrap(PkiProperties pkiProperties, CertRepository certRepository,
-            CertificateIssuer issuer, CertLifecycle lifecycle) {
+            CertificateIssuer issuer, CertLifecycle lifecycle, CertificateInstaller installer) {
         this.pkiProperties = pkiProperties;
         this.certRepository = certRepository;
         this.issuer = issuer;
         this.lifecycle = lifecycle;
+        this.installer = installer;
     }
 
     @Override
@@ -60,14 +60,10 @@ public class InventoryBootstrap implements ApplicationRunner {
 
         IssuedCertificate issued = issuer.issue(service.name());
 
-        // Key first, then the cert: locked decision 13.
-        Pem.writeAtomically(Path.of(service.keyPath()), issued.privateKeyPem());
-        Pem.writeAtomically(Path.of(service.certPath()), issued.chainPem());
-
-        // No connector reload here: the application owns no HTTPS connectors
-        // yet. When the demo listeners land, the explicit reload from locked
-        // decision 14 goes here, constructing the bundle from these files
-        // rather than fetching the registered one.
+        // Writes the files and reloads the listener explicitly, so the
+        // connector serves the real certificate immediately rather than the
+        // Stage A placeholder until the file watcher catches up.
+        installer.install(service, issued.chainPem(), issued.privateKeyPem());
 
         lifecycle.activateNew(
                 service.name(),

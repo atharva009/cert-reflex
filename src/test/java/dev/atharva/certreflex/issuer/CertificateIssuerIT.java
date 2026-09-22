@@ -49,7 +49,10 @@ import software.amazon.awssdk.services.kms.model.KeyUsageType;
  * <p>Postgres is here only because the application context needs a datasource;
  * no test below touches the database.
  */
-@SpringBootTest
+// NONE: this test is about issuance, and it keeps the demo listeners out of
+// the context, which would otherwise try to bind real ports and load
+// certificate files that Stage A never wrote here.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class CertificateIssuerIT {
 
@@ -79,13 +82,14 @@ class CertificateIssuerIT {
         registry.add("pki.ca-path", () -> WORK_DIR.resolve("ca.pem").toString());
         // Replaces the service list from application.yml outright, so the
         // bootstrap runner writes into the temp directory instead of ./runtime.
-        service(registry, 0, "demo-a");
-        service(registry, 1, "demo-b");
+        service(registry, 0, "demo-a", 8443);
+        service(registry, 1, "demo-b", 8444);
     }
 
-    private static void service(DynamicPropertyRegistry registry, int index, String name) {
+    private static void service(DynamicPropertyRegistry registry, int index, String name, int port) {
         registry.add("pki.services[" + index + "].name", () -> name);
         registry.add("pki.services[" + index + "].common-name", () -> name);
+        registry.add("pki.services[" + index + "].port", () -> port);
         registry.add("pki.services[" + index + "].cert-path",
                 () -> WORK_DIR.resolve(name).resolve("cert.pem").toString());
         registry.add("pki.services[" + index + "].key-path",
