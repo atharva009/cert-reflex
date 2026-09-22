@@ -15,13 +15,9 @@ signature.
 This is a weekend-scoped demo, not a production PKI system. It is built to be
 watched for two minutes and then read.
 
-## Recording
+## See it work
 
-<!-- Replace the line below by dragging docs/cert-reflex-demo.mp4 into the
-     GitHub web editor. GitHub only renders video from its own asset host, so
-     a repo path will not produce a player. A bare URL on its own line will. -->
-
-HOSTED_VIDEO_URL
+https://github.com/user-attachments/assets/731c3fdb-2761-4169-a5d7-22c5d42938ba
 
 30 seconds, no narration: three listeners on two-minute certificates, a
 certificate corrupted on disk, the expiry path on another listener, and each
