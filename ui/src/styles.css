@@ -1,4 +1,42 @@
 /*
+ * IBM Plex, vendored so a reviewer sees the same typography as the recording
+ * rather than a system fallback. Latin1 subset, woff2, three weights: exactly
+ * what this stylesheet uses. IBM's own builds, unmodified; OFL 1.1, see
+ * fonts/LICENSE.txt.
+ *
+ * The system stacks below stay in every font-family declaration, so a font
+ * that fails to load degrades instead of breaking the layout.
+ *
+ * The files live in src/fonts/ rather than public/ on purpose: Vite then
+ * resolves and emits these URLs itself, so they stay correct under the
+ * /dashboard/ base path. A public/ asset referenced relatively from a
+ * stylesheet in assets/ resolves one directory too deep and 404s.
+ */
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexSans-Regular-Latin1.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/IBMPlexSans-SemiBold-Latin1.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/IBMPlexMono-Regular-Latin1.woff2") format("woff2");
+}
+
+/*
  * An operations console, not a product surface.
  *
  * Colour discipline: the only hues on the page are the four status colours,
