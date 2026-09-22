@@ -18,6 +18,10 @@ public class CertEventRecorder {
         this.repository = repository;
     }
 
+    public void injected(String serviceName, String message) {
+        repository.insert(serviceName, CertEventType.INJECTED, message);
+    }
+
     public void detectedExpiring(String serviceName, String message) {
         repository.insert(serviceName, CertEventType.DETECTED_EXPIRING, message);
     }

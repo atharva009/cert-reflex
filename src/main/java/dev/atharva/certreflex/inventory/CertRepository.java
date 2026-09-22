@@ -106,6 +106,21 @@ public class CertRepository {
                 .update();
     }
 
+    /**
+     * Failure injection only: backdates not_after so the watcher sees the row
+     * as expiring on its next pass. The file on disk is deliberately untouched.
+     */
+    public int expireNow(String serviceName) {
+        return jdbcClient.sql("""
+                UPDATE certs
+                SET not_after = date_trunc('second', now() - interval '1 second'),
+                    updated_at = now()
+                WHERE service_name = :serviceName
+                """)
+                .param("serviceName", serviceName)
+                .update();
+    }
+
     public int updateStatus(String serviceName, CertStatus status) {
         return jdbcClient.sql("""
                 UPDATE certs SET status = :status, updated_at = now()
