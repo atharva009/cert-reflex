@@ -67,6 +67,23 @@ public class CertRepository {
                 .list();
     }
 
+    /**
+     * Rows a previous watcher pass marked and has not yet remediated.
+     *
+     * <p>Deliberately a separate query from {@link #findDueForRotation}, which
+     * filters on ACTIVE. Widening that one to cover these statuses would also
+     * catch a row still in ROTATING from a slow rotation and rotate it twice.
+     */
+    public List<CertRecord> findAwaitingRemediation() {
+        return jdbcClient.sql("SELECT " + COLUMNS + """
+                 FROM certs
+                 WHERE status IN ('EXPIRING', 'CORRUPTED')
+                 ORDER BY service_name
+                """)
+                .query(CertRepository::mapRow)
+                .list();
+    }
+
     /** First row for a service. Never call this on a rotation. */
     public void insert(String serviceName, String commonName, BigInteger serialNumber,
             Instant notBefore, Instant notAfter, CertStatus status,
