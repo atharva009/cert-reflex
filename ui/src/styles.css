@@ -1,0 +1,229 @@
+/*
+ * An operations console, not a product surface.
+ *
+ * Colour discipline: the only hues on the page are the four status colours,
+ * and they appear in exactly two places per panel — the left border and the
+ * status word. Everything else is the graphite background and neutral greys
+ * drawn from it, so a status change is the only thing that can catch the eye.
+ */
+
+:root {
+  --graphite: #161A1F;
+  /* Neutrals, not colours: the panel surface is a half-step off the
+     background so panels read as separate without a card outline. */
+  --surface: #1B2026;
+  --rule: #272D35;
+  --text: #E4E7EA;
+  --muted: #8A9199;
+
+  /* The four working colours. Nothing else on the page may use a hue. */
+  --active: #5FB88A;
+  --expiring: #E0A23D;
+  --corrupted: #E0623D;
+  --rotating: #4A9DE0;
+
+  --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Reserved for data readouts only: serials, countdowns, log timestamps. */
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--graphite);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.45;
+  /* One screen. The event log scrolls internally, the page does not. */
+  overflow: hidden;
+}
+
+.console {
+  height: 100%;
+  padding: 20px 24px;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 16px;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 10px;
+}
+
+.masthead h1 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.masthead .subtitle {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Informational, not an error: the backend being unreachable is usually
+   someone restarting it. Neutral greys, no status colour, no alarm. */
+.notice {
+  margin: 0;
+  padding: 7px 10px;
+  border-left: 3px solid var(--muted);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* One horizontal row, however many services are configured (the spec
+   anticipates three or four). */
+.panels {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+/* Square edges, flat surface, no shadow: a console, not a set of cards. */
+.panel {
+  background: var(--surface);
+  border-left: 3px solid var(--status);
+  padding: 14px 16px 12px;
+  display: grid;
+  gap: 2px;
+  /* The sanctioned motion: the border shifts when the status really changes. */
+  transition: border-left-color 120ms linear;
+}
+
+.panel .service {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.panel .endpoint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The largest thing on the panel, and monospace because it is data. */
+.panel .countdown {
+  font-family: var(--mono);
+  font-size: 46px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin-top: 6px;
+}
+
+.panel .countdown .unit {
+  font-size: 17px;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.panel .countdown.past-due {
+  color: var(--muted);
+}
+
+.panel .readout {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.panel .status {
+  color: var(--status);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* FAILED is terminal: the watcher never revisits the row, so the panel has to
+   say that rather than looking like a rotation still in flight. */
+.panel .terminal-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.panel .actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 14px;
+}
+
+/* Text actions, not buttons. */
+.panel .actions button {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.panel .actions button:disabled {
+  /* Plainly inert but still legible: dimmed rather than nearly erased, so it
+     reads as "disabled" instead of "missing". No new colour, just opacity. */
+  opacity: 0.45;
+  text-decoration-style: dotted;
+  cursor: not-allowed;
+}
+
+.log {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+}
+
+.log h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+}
+
+.log ol {
+  margin: 0;
+  padding: 10px 12px;
+  list-style: none;
+  background: var(--surface);
+  overflow-y: auto;
+  min-height: 0;
+  font-size: 13px;
+}
+
+.log li {
+  display: flex;
+  gap: 10px;
+  padding: 1px 0;
+}
+
+.log .at,
+.log .who {
+  font-family: var(--mono);
+  color: var(--muted);
+  flex: none;
+}
+
+.log .who { width: 7ch; }
+.log .at { width: 9ch; }
+
+.log .what {
+  color: var(--muted);
+  flex: none;
+  width: 19ch;
+}
+
+.log .message { color: var(--text); }
